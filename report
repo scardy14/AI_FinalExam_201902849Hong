@@ -1,0 +1,104 @@
+//완성도가 낮아 작동하는 코드가 아닙니다
+//동작보다는 간단한 코드들과 예시로 프로그램의 전체적인 흐름을 보여주기 위한 구성입니다.
+//자료 및 명령어를 찾는데에 어려움이 있어 필요한 명령어는 제가 임의로 만들었습니다.
+//자료셋은 Google 지도의 API를 사용한다는 전제로 흐름을 구성했습니다.
+
+
+import GoogleMap.API as GA  //구글지도 API를 받아옴
+GA.Location as GA.Location //API에서 위치정보를 가져옴
+GA.Restaurant as GA.Restaurant //API에서 Restaurant 정보를 가져옴.
+GA.Rating as GA.Rating  //API에서 사용자들의 평점을 가져옴
+GA.Review as GA.Review  //API에서 유저들이 남긴 리뷰를 가져옴
+
+//사용자 정보
+import GPSImformation as UserLocation //사용자의 정보를 받아옴
+import UserPreference as UP //사용자의 선호정보를 받아옴
+
+//범위내 음식점 검색
+SearchRange = sqrt{(rangGPSImformation.X- GA.Location.X)^2 + (rangGPSImformation.Y- GA.Location.Y)^2} // API위치와 사용자의 위치 차이를 검색범위로 설정.
+SearchRange = [0:300] //검색할 범위를 300m안으로 고정.
+
+//음식점
+//스팸분류기의 wordcounter 인용, 고객들이 남긴 리뷰를 word단위로 분해, 나온 단어들의 개수를 분석.
+class RestaurantWordCounter (GA.Review)          
+def fit(self, X, y=None):
+        return self
+    def transform(self, X, y=None):
+        X_transformed = []
+        for email in X:
+            text = email_to_text(email) or ""
+            if self.lower_case:
+                text = text.lower()
+            if self.replace_urls and url_extractor is not None:
+                urls = list(set(url_extractor.find_urls(text)))
+                urls.sort(key=lambda url: len(url), reverse=True)
+                for url in urls:
+                    text = text.replace(url, " URL ")
+            if self.replace_numbers:
+                text = re.sub(r'\d+(?:\.\d*)?(?:[eE][+-]?\d+)?', 'NUMBER', text)
+            if self.remove_punctuation:
+                text = re.sub(r'\W+', ' ', text, flags=re.M)
+            word_counts = Counter(text.split())
+            if self.stemming and stemmer is not None:
+                stemmed_word_counts = Counter()
+                for word, count in word_counts.items():
+                    stemmed_word = stemmer.stem(word)
+                    stemmed_word_counts[stemmed_word] += count
+                word_counts = stemmed_word_counts
+            X_transformed.append(word_counts)
+        return np.array(X_transformed)
+
+//위의 과정으로 모든 음식점들의 리뷰를 분석.
+//return된 X_transformed에서 array의 number1은 taste, 2는 spicy, 3은 salty, 4는 sweet, 5는 good, 6은 bad라고 가정.
+//필요한 정보만 가진 array 생성해줌
+      array ConsumerReview[6] =   X_transformed[0] + X_transformed[1] + X_transformed[2] + X_transformed[3] + X_transformed[4] + X_transformed[5]
+
+
+
+추천
+from sklearn.ensemble import RandomForestClassifier
+rnd_clf.fit(ConsumerReview, UP) // UP(user preference)와 위에서 가져온 ConsumerReview를 랜덤포레스트함.
+
+if ( rnd_clf.fit > 90)  //만일 추천도가 90이 넘는다면
+  print(GA.Restaurant)  //해당 레스토랑을 추천한다.
+
+평가
+int point;
+string bad;
+printf("만족도평가")
+scanf("%d", point)                    //음식점을 추천받아 사용한 유저로부터 만족도평가를 받음
+printf("불만족사항")
+printf("1.맛없음 2.매움 3.짬 4.달음 ") // 불만족사항의 리스트를 보여줌
+scanf("%s", bad)                      //불만족사항을 입력받음
+if (point < 70) {                     //만일 만족도평가가 70점보다 낮다면
+  ConsumerReview[bad].Importness ++;  //ConsumerReview에서 고객이 불만족한 사항의 중요도를 올림.
+  }
+
+
+
+
+
+
+
+
+//이동에 걸리는 시간 계산
+import datetime
+import simplejson
+import urllib.request
+
+from user_definition import *
+
+output_file = open(output_file_name, "a")
+# https://developers.google.com/maps/documentation/javascript/get-api-key
+apikey = 'AIzaSyCTWPyWsLgoMH6w_1iEf161paxhTiK1dNk'
+url = "https://maps.googleapis.com/maps/api/distancematrix/json?key={0}&origins={1}&destinations={2}&mode=driving&departure_time=now&language=en-EN&sensor=false".format(
+    str(apikey), str(orig_coord), str(dest_coord))
+result = simplejson.load(urllib.request.urlopen(url))
+driving_time = result['rows'][0]['elements'][0]['duration_in_traffic']['text']
+
+output_file.write(str(datetime.datetime.now()) + "\n")
+output_file.write(result['origin_addresses'][0] + "\n")
+output_file.write(result['destination_addresses'][0] + "\n")
+output_file.write(driving_time + "\n\n")
+
+output_file.close()
